@@ -6,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 
 # 1. Load dataset
 def load_dataset():
-    local_path = "pima-indians-diabetes.data.csv"  # Ensure this file is in the same directory
+    local_path = "pima-indians-diabetes.data.csv"
     col_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness',
                  'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age', 'Outcome']
     df = pd.read_csv(local_path, names=col_names)
@@ -18,7 +18,8 @@ def preprocess_data(df):
     y = df['Outcome'].values
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    return train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+    return X_train, X_test, y_train, y_test, scaler
 
 # 3. Build dense model for tabular classification
 def build_model(input_dim):
@@ -54,7 +55,7 @@ def predict_sample(model, sample):
     prediction = model.predict(sample, verbose=0)[0][0]
     return "Diabetic" if prediction >= 0.5 else "Non-Diabetic"
 
-# 8. Prepare sample input (after standardization)
+# 8. Prepare sample input
 def prepare_sample_input(raw_sample, scaler):
     return scaler.transform([raw_sample])[0]
 
@@ -70,22 +71,13 @@ def load_sample_from_file(filename="sample_input.txt"):
 
 # ===== Main Driver Code =====
 if __name__ == "__main__":
-    # Load and preprocess data
     df = load_dataset()
-    X_train, X_test, y_train, y_test = preprocess_data(df)
-
-    # Extract scaler for prediction use
-    scaler = StandardScaler().fit(df.drop('Outcome', axis=1).values)
-
-    # Build and train model
+    X_train, X_test, y_train, y_test, scaler = preprocess_data(df)
     model = build_model(input_dim=X_train.shape[1])
     compile_model(model)
     history = train_model(model, X_train, y_train, X_test, y_test, epochs=20)
-
-    # Evaluate model
     evaluate_model(model, X_test, y_test)
 
-    # Load sample input from external file
     raw_sample = load_sample_from_file("sample_input.txt")
     if raw_sample:
         processed_sample = prepare_sample_input(raw_sample, scaler)
